@@ -24,6 +24,9 @@ var (
 	validFrom = flag.String("start-date", "", "Creation date formatted as Jan 1 15:04:05 2011 (default now)")
 	validFor  = flag.Duration("duration", 365*24*time.Hour, "Duration that certificate is valid for")
 	version   = flag.Bool("version", false, "Print the version string")
+
+	clientSubjectOrg = flag.String("client-subject-org", "Acme Co", "Client certificate Subject Organization")
+	clientSubjectCN  = flag.String("client-subject-cn", "client_auth_test_cert", "Client certificate Subject Common Name")
 )
 
 const Version = "0.1"
@@ -73,7 +76,7 @@ func main() {
 		KeyUsage:              x509.KeyUsageCertSign,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,
-		IsCA: true,
+		IsCA:                  true,
 	}
 
 	derBytes, err := x509.CreateCertificate(rand.Reader, &rootTemplate, &rootTemplate, &rootKey.PublicKey, rootKey)
@@ -104,7 +107,7 @@ func main() {
 		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,
-		IsCA: false,
+		IsCA:                  false,
 	}
 	hosts := strings.Split(*host, ",")
 	for _, h := range hosts {
@@ -131,15 +134,15 @@ func main() {
 	clientTemplate := x509.Certificate{
 		SerialNumber: new(big.Int).SetInt64(4),
 		Subject: pkix.Name{
-			Organization: []string{"Acme Co"},
-			CommonName:   "client_auth_test_cert",
+			Organization: []string{*clientSubjectOrg},
+			CommonName:   *clientSubjectCN,
 		},
 		NotBefore:             notBefore,
 		NotAfter:              notAfter,
 		KeyUsage:              x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
 		BasicConstraintsValid: true,
-		IsCA: false,
+		IsCA:                  false,
 	}
 
 	derBytes, err = x509.CreateCertificate(rand.Reader, &clientTemplate, &rootTemplate, &clientKey.PublicKey, rootKey)
